@@ -205,3 +205,13 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# FBDS Extractor - Generated files
+# Downloaded geodata from geo.fbds.org.br
+downloads/
+
+# OCR batch processing output
+fbds_mapas_ocr.csv
+
+# Exception/error logs from scraper
+exceptions.json
