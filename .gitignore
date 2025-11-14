@@ -208,7 +208,7 @@ __marimo__/
 
 # FBDS Extractor - Generated files
 # Downloaded geodata from geo.fbds.org.br
-downloads/
+downloads/*
 
 # OCR batch processing output
 fbds_mapas_ocr.csv

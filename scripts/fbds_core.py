@@ -74,6 +74,7 @@ class FBDSAsyncScraper:
         download_root: Optional[Path] = None,
         expected_folders: Optional[Iterable[str]] = None,
         max_concurrency: int = 5,
+        city_concurrency: int = 1,
         request_timeout: float = 45.0,
     ) -> None:
         self.base_url = base_url.rstrip("/") + "/"
@@ -86,6 +87,9 @@ class FBDSAsyncScraper:
             "USO",
         }
         self.max_concurrency = max_concurrency
+        # Parallelism across cities (higher level than per-file downloads)
+        # Default keeps previous behavior (sequential cities) when = 1
+        self.city_concurrency = max(1, int(city_concurrency))
         self.request_timeout = request_timeout
         self.exceptions: List[Dict[str, object]] = []
         self._semaphore = asyncio.Semaphore(max_concurrency)
@@ -109,6 +113,7 @@ class FBDSAsyncScraper:
             follow_redirects=True,
             headers={"User-Agent": self._user_agent},
             timeout=self.request_timeout,
+            http2=True,
             limits=limits,
         )
         return new_client, True
@@ -385,6 +390,7 @@ class FBDSAsyncScraper:
         state: str,
         city_filter: Optional[Sequence[str]] = None,
         folder_filter: Optional[Sequence[str]] = None,
+        city_concurrency: Optional[int] = None,
         client: Optional[httpx.AsyncClient] = None,
     ) -> List[Dict[str, object]]:
         state = state.strip().upper()
@@ -401,18 +407,32 @@ class FBDSAsyncScraper:
 
             results: List[Dict[str, object]] = []
             total = len(cities)
-            for idx, city in enumerate(cities, start=1):
-                pct = (idx / total) * 100
-                print(f"[{state}] {idx}/{total} cities ({pct:5.1f}%) -> {city}")
-                city_result = await self.download_city(
-                    state=state,
-                    city=city,
-                    folder_filter=folder_filter,
-                    client=client,
-                )
+
+            # Allow parallel downloads across multiple cities while still
+            # respecting the per-file max_concurrency via self._semaphore
+            # inside _download_file.
+            parallel = max(1, int(city_concurrency or self.city_concurrency))
+            city_sem = asyncio.Semaphore(parallel)
+
+            async def _run_city(city_name: str) -> Tuple[str, Dict[str, object]]:
+                async with city_sem:
+                    return city_name, await self.download_city(
+                        state=state,
+                        city=city_name,
+                        folder_filter=folder_filter,
+                        client=client,
+                    )
+
+            tasks = [asyncio.create_task(_run_city(city)) for city in cities]
+            done = 0
+            for fut in asyncio.as_completed(tasks):
+                city_name, city_result = await fut
+                done += 1
+                pct = (done / total) * 100
+                print(f"[{state}] {done}/{total} cities ({pct:5.1f}%) -> {city_name}")
                 results.append(city_result)
                 print(
-                    f"[{state}] Finished {city} | downloaded folders: "
+                    f"[{state}] Finished {city_name} | downloaded folders: "
                     f"{city_result['downloaded_folders']}"
                 )
 

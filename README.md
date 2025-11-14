@@ -246,6 +246,79 @@ Alguns exemplos de uso do _scraper_:
   Se algo falhar no meio, você pode usar `--retry-failures` para focar só nas
   falhas registradas em `exceptions.json`.
 
+#### Ajustando paralelismo/concorrência (exemplos práticos)
+
+Você pode acelerar os downloads ajustando dois parâmetros:
+
+- `--max-concurrency`: número de requisições/arquivos em paralelo (nível por arquivo)
+- `--city-concurrency`: número de cidades processadas em paralelo (nível por cidade)
+
+Recomendações gerais:
+
+- Comece com valores moderados e aumente aos poucos.
+- Se notar muitos timeouts ou instabilidade, reduza um pouco.
+- Combine com `--folders MAPAS` quando o objetivo for apenas o OCR dos mapas (reduz o volume total).
+
+Exemplos para um estado (SP):
+
+- Mais conservador (máquina/rede modestas):
+
+  ```bash
+  python scripts/fbds_async_scraper.py \
+    --download-state SP \
+    --folders MAPAS \
+    --max-concurrency 3 \
+    --city-concurrency 1
+  ```
+
+- Intermediário (bom equilíbrio):
+
+  ```bash
+  python scripts/fbds_async_scraper.py \
+    --download-state SP \
+    --folders MAPAS \
+    --max-concurrency 8 \
+    --city-concurrency 3
+  ```
+
+- Mais agressivo (use com cautela):
+
+  ```bash
+  python scripts/fbds_async_scraper.py \
+    --download-state SP \
+    --max-concurrency 12 \
+    --city-concurrency 6
+  ```
+
+Exemplos para Brasil (todos os estados ou um conjunto grande):
+
+- Intermediário, filtrando alguns estados:
+
+  ```bash
+  python scripts/fbds_async_scraper.py \
+    --download-all \
+    --states SP MG RJ ES \
+    --folders MAPAS \
+    --max-concurrency 8 \
+    --city-concurrency 3
+  ```
+
+- Todos os estados, foco completo (sem filtrar pastas):
+
+  ```bash
+  python scripts/fbds_async_scraper.py \
+    --download-all \
+    --max-concurrency 10 \
+    --city-concurrency 4
+  ```
+
+Se a execução for interrompida ou ocorrerem falhas pontuais (timeouts etc.),
+é possível retomar apenas o que falhou usando o log de exceções:
+
+```bash
+python scripts/fbds_async_scraper.py --retry-failures --exceptions downloads/exceptions.json
+```
+
 ### 2. Versão sequencial (single process) do OCR
 
 Roda em um único processo; é mais simples de depurar e mais leve em termos de

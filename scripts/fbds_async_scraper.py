@@ -20,6 +20,7 @@ async def run_cli(args: argparse.Namespace) -> None:
         base_url=args.base_url,
         download_root=args.output,
         max_concurrency=args.max_concurrency,
+        city_concurrency=args.city_concurrency,
     )
 
     if args.retry_failures:
@@ -66,13 +67,21 @@ async def run_cli(args: argparse.Namespace) -> None:
 
         if args.download_state:
             state = args.download_state
-            results = await scraper.download_state(state, folder_filter=folder_filter, client=client)
+            results = await scraper.download_state(
+                state,
+                folder_filter=folder_filter,
+                city_concurrency=args.city_concurrency,
+                client=client,
+            )
             print(f"Downloaded state {state} ({len(results)} cities)")
             scraper.flush_exceptions(args.exceptions)
 
         if args.download_all:
             states = args.states or None
-            results = await scraper.download_all(state_filter=states, folder_filter=folder_filter)
+            results = await scraper.download_all(
+                state_filter=states,
+                folder_filter=folder_filter,
+            )
             print(f"Downloaded {len(results)} cities across {len(states) if states else 'all'} states")
             scraper.flush_exceptions(args.exceptions)
 
@@ -90,6 +99,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory where files will be saved",
     )
     parser.add_argument("--max-concurrency", type=int, default=5, help="Maximum concurrent downloads")
+    parser.add_argument(
+        "--city-concurrency",
+        type=int,
+        default=1,
+        help="How many cities to download in parallel (in addition to per-file concurrency)",
+    )
     parser.add_argument(
         "--folders",
         nargs="*",
