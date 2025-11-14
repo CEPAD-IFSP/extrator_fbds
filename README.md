@@ -289,9 +289,6 @@ Saída típica:
 - ...
 - `Done. Wrote 1234 rows to /caminho/para/fbds_mapas_ocr_mp.csv`
 
-> Dica: se quiser limitar o uso de CPU, podemos facilmente adicionar um
-> parâmetro `--workers N` à versão multiprocessada. Hoje o número de processos é
-> automaticamente definido por `os.cpu_count()`.
 
 ### 4. Usando outra pasta de downloads
 
