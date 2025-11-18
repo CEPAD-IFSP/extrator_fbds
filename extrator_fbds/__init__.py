@@ -18,6 +18,6 @@ try:  # pragma: no cover - simple metadata access
 	__version__ = _pkg_version("extrator_fbds")
 except Exception:  # noqa: BLE001 - broad to guarantee attribute exists
 	# Fallback matches pyproject.toml version; update when releasing.
-	__version__ = "0.1.0"
+	__version__ = "0.1.1"
 
 __all__ = ["FBDSAsyncScraper", "extract_year_and_datum", "__version__"]
