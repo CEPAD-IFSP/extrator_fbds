@@ -83,7 +83,7 @@ def run_batch_mp(
     max_workers: int | None = None,
 ) -> None:
     """Run OCR over all MAPAS JPGs with multiprocessing and write a CSV.
-    
+
     Args:
         download_root: Root directory containing downloaded FBDS data.
                       Defaults to DOWNLOAD_ROOT env var or './downloads'.
@@ -96,12 +96,12 @@ def run_batch_mp(
         download_root = Path(os.environ.get("DOWNLOAD_ROOT", "downloads")).resolve()
     else:
         download_root = Path(download_root).resolve()
-    
+
     if output_csv is None:
         output_csv = Path("fbds_mapas_ocr_mp.csv").resolve()
     else:
         output_csv = Path(output_csv).resolve()
-    
+
     if max_workers is None:
         max_workers = os.cpu_count() or 1
 
@@ -122,9 +122,7 @@ def run_batch_mp(
 
         done = 0
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
-            future_to_job = {
-                executor.submit(_process_single_image, job): job for job in jobs
-            }
+            future_to_job = {executor.submit(_process_single_image, job): job for job in jobs}
 
             for future in as_completed(future_to_job):
                 row = future.result()

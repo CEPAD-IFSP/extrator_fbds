@@ -45,7 +45,9 @@ async def retry_failures_from_file(
         download_root=scraper.download_root,
         max_concurrency=scraper.max_concurrency,
         request_timeout=scraper.request_timeout,
-    )._ensure_client(None)[0] as client:  # reuse config, new client
+    )._ensure_client(None)[
+        0
+    ] as client:  # reuse config, new client
         # Retry file downloads
         download_tasks = []
         for err in download_errors:

@@ -7,7 +7,7 @@ def test_version_present():
 
 def test_version_semver_like():
     # Accepts forms like 0.1.0 or 0.1.0.post1
-    parts = __version__.split('.')
+    parts = __version__.split(".")
     assert len(parts) >= 2
 
 

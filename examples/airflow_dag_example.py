@@ -55,14 +55,14 @@ def download_fbds_data(**context):
     """Task 1: Download FBDS data for specified states."""
     execution_date = context["execution_date"]
     print(f"Starting FBDS download for execution date: {execution_date}")
-    
+
     # Create scraper instance
     scraper = FBDSAsyncScraper(
         download_root=DOWNLOAD_ROOT,
         max_concurrency=MAX_CONCURRENCY,
         city_concurrency=CITY_CONCURRENCY,
     )
-    
+
     # Run the download asynchronously
     results = asyncio.run(
         scraper.download_all(
@@ -70,13 +70,13 @@ def download_fbds_data(**context):
             folder_filter=["MAPAS"],  # Only download MAPAS for OCR
         )
     )
-    
+
     # Save exceptions log
     scraper.save_exceptions()
-    
+
     print(f"Downloaded data for {len(results)} cities")
     print(f"Exceptions logged to: {DOWNLOAD_ROOT / 'exceptions.json'}")
-    
+
     return {"cities_processed": len(results)}
 
 
@@ -84,19 +84,19 @@ def run_ocr_processing(**context):
     """Task 2: Run OCR on downloaded MAPAS images."""
     execution_date = context["execution_date"]
     date_str = execution_date.strftime("%Y%m%d")
-    
+
     output_csv = OUTPUT_ROOT / f"fbds_mapas_ocr_{date_str}.csv"
     print(f"Starting OCR processing, output to: {output_csv}")
-    
+
     # Run batch OCR with multiprocessing
     run_batch_mp(
         download_root=DOWNLOAD_ROOT,
         output_csv=output_csv,
         max_workers=OCR_MAX_WORKERS,
     )
-    
+
     print(f"OCR completed. Results saved to: {output_csv}")
-    
+
     return {"output_file": str(output_csv)}
 
 
@@ -117,28 +117,28 @@ with DAG(
     catchup=False,
     tags=["fbds", "geodata", "ocr"],
 ) as dag:
-    
+
     # Task 1: Download FBDS data
     download_task = PythonOperator(
         task_id="download_fbds_data",
         python_callable=download_fbds_data,
         execution_timeout=timedelta(hours=6),
     )
-    
+
     # Task 2: Run OCR on downloaded images
     ocr_task = PythonOperator(
         task_id="run_ocr_processing",
         python_callable=run_ocr_processing,
         execution_timeout=timedelta(hours=2),
     )
-    
+
     # Task 3: Optional cleanup
     cleanup_task = PythonOperator(
         task_id="cleanup_old_data",
         python_callable=cleanup_old_data,
         execution_timeout=timedelta(minutes=30),
     )
-    
+
     # Define task dependencies
     download_task >> ocr_task >> cleanup_task
 

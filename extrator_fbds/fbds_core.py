@@ -80,12 +80,16 @@ class FBDSAsyncScraper:
         self.base_url = base_url.rstrip("/") + "/"
         self.download_root = (download_root or Path("downloads")).resolve()
         self.download_root.mkdir(parents=True, exist_ok=True)
-        self.expected_folders: Set[str] = set(expected_folders) if expected_folders else {
-            "APP",
-            "HIDROGRAFIA",
-            "MAPAS",
-            "USO",
-        }
+        self.expected_folders: Set[str] = (
+            set(expected_folders)
+            if expected_folders
+            else {
+                "APP",
+                "HIDROGRAFIA",
+                "MAPAS",
+                "USO",
+            }
+        )
         self.max_concurrency = max_concurrency
         # Parallelism across cities (higher level than per-file downloads)
         # Default keeps previous behavior (sequential cities) when = 1
@@ -94,9 +98,7 @@ class FBDSAsyncScraper:
         self.exceptions: List[Dict[str, object]] = []
         self._semaphore = asyncio.Semaphore(max_concurrency)
         self._user_agent = (
-            "Mozilla/5.0 (X11; Linux x86_64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/121.0 Safari/537.36"
+            "Mozilla/5.0 (X11; Linux x86_64) " "AppleWebKit/537.36 (KHTML, like Gecko) " "Chrome/121.0 Safari/537.36"
         )
 
     # ------------------------------------------------------------------
@@ -233,11 +235,7 @@ class FBDSAsyncScraper:
         try:
             html = await self._fetch_html(client, self.base_url)
             entries = parse_directory_listing(html)
-            states = [
-                e.name
-                for e in entries
-                if e.entry_type == "folder" and len(e.name) == 2 and e.name.isalpha()
-            ]
+            states = [e.name for e in entries if e.entry_type == "folder" and len(e.name) == 2 and e.name.isalpha()]
             states.sort()
             return states
         finally:
@@ -255,11 +253,7 @@ class FBDSAsyncScraper:
         try:
             html = await self._fetch_html(client, self._href_to_url(state_href))
             entries = parse_directory_listing(html)
-            cities = [
-                e.name
-                for e in entries
-                if e.entry_type == "folder" and e.name.lower() != "parent directory"
-            ]
+            cities = [e.name for e in entries if e.entry_type == "folder" and e.name.lower() != "parent directory"]
             cities.sort()
             return cities
         finally:
@@ -279,11 +273,7 @@ class FBDSAsyncScraper:
         try:
             html = await self._fetch_html(client, self._href_to_url(city_href))
             entries = parse_directory_listing(html)
-            folders = [
-                e.name
-                for e in entries
-                if e.entry_type == "folder" and e.name.lower() != "parent directory"
-            ]
+            folders = [e.name for e in entries if e.entry_type == "folder" and e.name.lower() != "parent directory"]
             files = [e.name for e in entries if e.entry_type == "file"]
             return {
                 "state": state,
@@ -312,9 +302,7 @@ class FBDSAsyncScraper:
             html = await self._fetch_html(client, self._href_to_url(city_href))
             entries = parse_directory_listing(html)
 
-            folder_entries = [
-                e for e in entries if e.entry_type == "folder" and e.name.lower() != "parent directory"
-            ]
+            folder_entries = [e for e in entries if e.entry_type == "folder" and e.name.lower() != "parent directory"]
             file_entries = [e for e in entries if e.entry_type == "file"]
 
             available_folders = [e.name for e in folder_entries]
@@ -431,10 +419,7 @@ class FBDSAsyncScraper:
                 pct = (done / total) * 100
                 print(f"[{state}] {done}/{total} cities ({pct:5.1f}%) -> {city_name}")
                 results.append(city_result)
-                print(
-                    f"[{state}] Finished {city_name} | downloaded folders: "
-                    f"{city_result['downloaded_folders']}"
-                )
+                print(f"[{state}] Finished {city_name} | downloaded folders: " f"{city_result['downloaded_folders']}")
 
             return results
         finally:
