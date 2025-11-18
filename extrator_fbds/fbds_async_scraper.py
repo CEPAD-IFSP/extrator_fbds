@@ -11,8 +11,8 @@ import argparse
 import asyncio
 from pathlib import Path
 
-from fbds_core import FBDSAsyncScraper
-from fbds_retry_failures import retry_failures_from_file
+from extrator_fbds.fbds_core import FBDSAsyncScraper
+from extrator_fbds.fbds_retry_failures import retry_failures_from_file
 
 
 async def run_cli(args: argparse.Namespace) -> None:

@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
-from fbds_core import FBDSAsyncScraper
+from extrator_fbds.fbds_core import FBDSAsyncScraper
 
 
 async def retry_failures_from_file(

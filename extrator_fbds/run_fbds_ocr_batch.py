@@ -20,7 +20,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Iterable, List, Tuple
 
-from fbds_ocr import extract_year_and_datum
+from extrator_fbds.fbds_ocr import extract_year_and_datum
 
 
 def iter_mapas_images(download_root: Path) -> Iterable[Tuple[str, str, Path]]:
@@ -85,11 +85,33 @@ def _process_single_image(args: Tuple[str, str, Path]) -> List[str]:
 
 
 def run_batch(
-    download_root: Path,
-    output_csv: Path,
+    download_root: Path | None = None,
+    output_csv: Path | None = None,
+    max_workers: int | None = None,
 ) -> None:
-    """Run OCR over all MAPAS JPGs with multiprocessing and write a CSV."""
-
+    """Run OCR over all MAPAS JPGs with multiprocessing and write a CSV.
+    
+    Args:
+        download_root: Root directory containing downloaded FBDS data.
+                      Defaults to DOWNLOAD_ROOT env var or './downloads'.
+        output_csv: Path to output CSV file.
+                   Defaults to './fbds_mapas_ocr.csv'.
+        max_workers: Number of parallel processes. Defaults to CPU count.
+    """
+    # Allow programmatic calls from Airflow/scripts without env vars
+    if download_root is None:
+        download_root = Path(os.environ.get("DOWNLOAD_ROOT", "downloads")).resolve()
+    else:
+        download_root = Path(download_root).resolve()
+    
+    if output_csv is None:
+        output_csv = Path("fbds_mapas_ocr.csv").resolve()
+    else:
+        output_csv = Path(output_csv).resolve()
+    
+    if max_workers is None:
+        max_workers = os.cpu_count() or 1
+    
     output_csv.parent.mkdir(parents=True, exist_ok=True)
 
     # Collect all work first so we can parallelize safely.
@@ -99,7 +121,6 @@ def run_batch(
         print("No MAPAS JPGs found. Nothing to do.")
         return
 
-    max_workers = os.cpu_count() or 1
     print(f"Found {total} images. Using {max_workers} processes for OCR.")
 
     with open(output_csv, "w", newline="", encoding="utf-8") as fh:
@@ -123,13 +144,8 @@ def run_batch(
 
 
 def main() -> None:
-    # Default to the same root as fbds_async_scraper, but let the user
-    # override via environment variable if needed.
-    download_root = Path(os.environ.get("DOWNLOAD_ROOT", "downloads")).resolve()
-    output_csv = Path("fbds_mapas_ocr.csv").resolve()
-
-    print(f"Scanning MAPAS JPEGs under: {download_root}")
-    run_batch(download_root=download_root, output_csv=output_csv)
+    # CLI mode: use defaults or env vars
+    run_batch()
 
 
 if __name__ == "__main__":
