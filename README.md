@@ -1,3 +1,25 @@
+\# FBDS Map Data Extractor / Extrator de Datas dos Mapas FBDS
+
+# FBDS Map Data Extractor / Extrator de Datas dos Mapas FBDS
+
+[![CI](https://github.com/CEPAD-IFSP/extrator_fbds/actions/workflows/ci.yml/badge.svg)](https://github.com/CEPAD-IFSP/extrator_fbds/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/extrator-fbds)](https://pypi.org/project/extrator-fbds/)
+[![Python versions](https://img.shields.io/pypi/pyversions/extrator-fbds)](https://pypi.org/project/extrator-fbds/)
+[![License: MIT](https://img.shields.io/pypi/l/extrator-fbds)](LICENSE)
+English summary:
+# Automated Releases / Publicações Automáticas
+
+GitHub Actions workflows included:
+
+- `ci.yml`: lint (`ruff`, `black --check`), tests (`pytest`), build & `twine check` on pushes and PRs.
+- `release.yml`: manual dispatch with a version bump (`patch`, `minor`, `major`) that updates `pyproject.toml` and fallback version in `extrator_fbds/__init__.py`, commits and creates a tag `vX.Y.Z`. Any push of a tag matching `v*` triggers build and publish to PyPI.
+
+To enable PyPI publishing, add a repository secret `PYPI_API_TOKEN` containing a PyPI API token (username `__token__`).
+This Python package asynchronously downloads geospatial data from the public FBDS repository (geo.fbds.org.br) and performs OCR on MAPAS images to extract two key metadata fields: ANO_BASE (image/satellite year) and ANO_SIRGAS (datum year). It offers CLI commands for scraping and batch OCR (sequential and multiprocessing) plus easy integration with Airflow for scheduled pipelines.
+
+Resumo em Português:
+Este pacote Python faz download assíncrono de geodados do repositório público da FBDS (geo.fbds.org.br) e executa OCR em imagens de MAPAS para extrair dois metadados principais: ANO_BASE (ano da imagem/satélite) e ANO_SIRGAS (ano do datum). Inclui comandos de CLI para scraping e OCR em lote (sequencial e multiprocessing) e integração simples com Airflow para execuções agendadas.
+
 # Extração de datas (ANO BASE / SIRGAS) a partir dos MAPAS da FBDS
 
 Este pacote Python fornece ferramentas para:

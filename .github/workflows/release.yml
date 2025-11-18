@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type (patch, minor, major)'
+        required: true
+        default: 'patch'
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  bump-and-tag:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Bump version
+        id: bump
+        run: |
+          python - <<'PY' "${{ github.event.inputs.bump }}" > new_version.txt
+          import re, sys, pathlib
+          bump = sys.argv[1].strip().lower()
+          pyproject = pathlib.Path('pyproject.toml')
+          text = pyproject.read_text()
+          m = re.search(r'version = "(\d+)\.(\d+)\.(\d+)"', text)
+          if not m:
+              print('No version found', file=sys.stderr); sys.exit(1)
+          maj, minor, patch = map(int, m.groups())
+          if bump == 'major':
+              maj += 1; minor = 0; patch = 0
+          elif bump == 'minor':
+              minor += 1; patch = 0
+          else:
+              patch += 1
+          new_version = f"{maj}.{minor}.{patch}"
+          text = re.sub(r'version = "\d+\.\d+\.\d+"', f'version = "{new_version}"', text)
+          pyproject.write_text(text)
+          # Update fallback version in __init__.py if present
+          init_path = pathlib.Path('extrator_fbds/__init__.py')
+          init_txt = init_path.read_text()
+          init_new = re.sub(r'__version__ = "\d+\.\d+\.\d+"', f'__version__ = "{new_version}"', init_txt)
+          init_path.write_text(init_new)
+          print(new_version)
+          PY
+          echo "version=$(cat new_version.txt)" >> $GITHUB_OUTPUT
+
+      - name: Commit and tag
+        run: |
+          version=$(cat new_version.txt)
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add pyproject.toml extrator_fbds/__init__.py
+          git commit -m "chore: bump version to ${version}"
+          git tag -a "v${version}" -m "Release ${version}"
+          git push origin HEAD --tags
+
+  publish:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+      - name: Build package
+        run: python -m build
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          # repository-url: https://test.pypi.org/legacy/  # Uncomment to publish to TestPyPI
