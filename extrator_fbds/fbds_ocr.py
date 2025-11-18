@@ -1,7 +1,6 @@
 import pytesseract
 from PIL import Image
 import re
-import os
 
 def extract_year_and_datum(image_path):
     """Extract year from 'ANO XXXX' and datum from 'SIRGAS XXXX'"""
